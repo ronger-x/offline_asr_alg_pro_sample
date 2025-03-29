@@ -371,6 +371,7 @@ typedef struct
 
 
 extern volatile bool start_recv_flag ;//向wifi请求数据
+extern SemaphoreHandle_t machine_status_mutex;
 extern audio_play_os_stream_t cur_play_stream;
 
 bool cmd_need_ack(uint16_t cmd);

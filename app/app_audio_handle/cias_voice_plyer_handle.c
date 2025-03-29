@@ -7,7 +7,6 @@
  */
 #include "audio_play_api.h"
 #include "cias_voice_plyer_handle.h"
-#include "audio_play_api.h"
 #include "cias_audio_data_handle.h"
 #include "status_share.h"
 

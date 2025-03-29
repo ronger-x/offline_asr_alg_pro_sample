@@ -9,6 +9,7 @@
 #define _cias_network_msg_send_task_H_
 
 #include <stdbool.h>
+#include "cias_common.h"
 #include "system_msg_deal.h"
 
 #ifdef __cplusplus

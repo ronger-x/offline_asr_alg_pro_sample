@@ -2,6 +2,7 @@
 
 #include "user_config.h"
 
+#include "cias_common.h"
 #include "cias_network_msg_send_task.h"
 #include "cias_network_msg_protocol.h"
 #include "cias_voice_plyer_handle.h"
@@ -21,7 +22,7 @@ extern QueueHandle_t pcm_speex_deal_queue;
 static void play_done_callback(cmd_handle_t cmd_handle)
 {
 #if AUDIO_PLAYER_ENABLE
-    resume_voice_in();
+    // resume_voice_in();
     if (get_net_player_status(PLAY_M4A) == NET_PLAYER_PAUSE)
     {
         ci_logdebug(LOG_USER, "resume M4a start!\n");

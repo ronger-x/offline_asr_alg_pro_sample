@@ -43,6 +43,7 @@
 #include "ota_partition_verify.h"
 #include "doa_app_handle.h"
 #include "codec_manage_outside_port.h"
+#include "cias_uart_protocol.h"
 /**
  * @brief 硬件初始化
  *          这个函数主要用于系统上电后初始化硬件寄存器到初始值，配置中断向量表初始化芯片io配置时钟
