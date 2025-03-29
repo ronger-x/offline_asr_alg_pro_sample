@@ -7,41 +7,9 @@
 /*板级配置更多细节请查看:https://document.chipintelli.com/硬件资料-->模块手册
 chipintelli提供的部分开发板和模组，可以通过下面的宏选择，也可以参考开发板的板级配置文
 件添加自定义板级配置文件*/
-#define USE_CI_D02GS01J_BOARD       0   //CI-D0XGS01J，端子模块，芯片型号必须设置为1302
-#define USE_CI_D02GS02S_BOARD       0   //CI-D0XGS02S，SMT模块，芯片型号必须设置为1302
-#define USE_CI_D03GS02S_BOARD       1   //CI-D0XGS02S，SMT模块，芯片型号必须设置为1303
-#define USE_CI_D12GS01J_BOARD       0   //CI-D0XGS01J，端子模块，芯片型号必须设置为1312JE
-#define USE_CI_D06GT01D_BOARD       0   //CI-D06GT01D，开发版，芯片型号必须设置为1306
-#define USE_CI_E12GS02J_BOARD       0   //CI-E12GS02J，开发版，芯片型号必须设置为231x
-#define USE_CUS_D06GS09S_BOARD      0   //CI_D06GS09S,开发板，型号必须为设置1306-仅配置支持双mic 算法+AEC，其他配置不支持
-#define USE_CUS_XXXXXXX_BOARD       0   //用户自定义
 
-#if (USE_CI_D02GS01J_BOARD == 1)
-#define CI_CHIP_TYPE                1302    //flash:2MB,SSOP24
-#define BOARD_PORT_FILE             "CI-D02GS01J.c"
-#elif (USE_CI_D02GS02S_BOARD == 1)
-#define CI_CHIP_TYPE                1302    //flash:2MB,SSOP24
-#define BOARD_PORT_FILE             "CI-D02GS02S.c"
-#elif (USE_CI_D03GS02S_BOARD == 1)
 #define CI_CHIP_TYPE                1303    //flash:2MB,SSOP24
 #define BOARD_PORT_FILE             "CI-D03GS02S.c"
-#elif (USE_CI_D12GS01J_BOARD == 1)
-#define CI_CHIP_TYPE                1312    //flash:2MB,SSOP16
-#define BOARD_PORT_FILE             "CI-D12GS01J.c"
-#elif (USE_CI_D06GT01D_BOARD == 1)
-#define CI_CHIP_TYPE                1306    //flash:4MB,QFN40
-#define BOARD_PORT_FILE             "CI-D06GT01D.c"
-#elif (USE_CI_E12GS02J_BOARD == 1)
-#define CI_CHIP_TYPE                2312    //flash:2MB,SSOP16
-#define BOARD_PORT_FILE             "CI-E12GS02J.c"
-#define USE_BLE                     1
-#elif (USE_CUS_D06GS09S_BOARD == 1)
-#define CI_CHIP_TYPE                1306    //flash:4MB,QFN40 双mipc算法+外部codec 7243e用该板级
-#define BOARD_PORT_FILE             "CI-D06GS09S_V1.0.c"
-#elif (USE_CUS_XXXXXXX_BOARD == 1)
-#define CI_CHIP_TYPE                xxxx    //flash:4MB,QFN40
-#define BOARD_PORT_FILE             "CI-XXXX.c"
-#endif
 
 #ifndef HOST_MIC_USE_NUMBER
 #define HOST_MIC_USE_NUMBER            1   //定义mic数量
@@ -127,12 +95,15 @@ chipintelli提供的部分开发板和模组，可以通过下面的宏选择，
 #define INNER_CODEC_AUDIO_IN_USE_RESAMPLE   0                    //默认打开   0:不开重采样   1：打开重采样
 #endif
 #if (VOICE_PLAY_BY_UART)
-#define PCM_VOICE_PLAY_BY_UART      (1)                          //播放PCM格式 PCM和MP3格式只能选一个
+#define PCM_VOICE_PLAY_BY_UART      (0)                          //播放PCM格式 PCM和MP3格式只能选一个
 #define MP3_VOICE_PLAY_BY_UART      (!PCM_VOICE_PLAY_BY_UART)    //播放MP3格式 PCM和MP3格式只能选一个，仅支持播放采样率16k且单声道音频数据
 #define AUDIO_PLAY_USE_OUTSIDE      (1)                          //启用自定义外部数据源播放
 #endif
 
 
+#define NEWORK_RECV_QUEUE_ENABLE        1    //网络端串口数据入队列
+#define CIAS_SIGNAL_MIC_DEMO_ENABLE     1    //单 mic demo功能-离在线
+#define CIAS_DOUBLE_MIC_DEMO_ENABLE     (!CIAS_SIGNAL_MIC_DEMO_ENABLE)    //双mic demo功能-离在线
 //**语音识别配置
 #define USE_SEPARATE_WAKEUP_EN          1       //是否使用独立的唤醒词模型。1:是 0:否。
 #define DEFAULT_MODEL_GROUP_ID          1       //模型ID,用于指定上电启动时，默认进入的语言模型。通常0为命令词模型,1为唤醒词模型
@@ -195,57 +166,8 @@ chipintelli提供的部分开发板和模组，可以通过下面的宏选择，
 #endif
 #endif
 
-#if USE_WMAN_VPR
-#define VP_USE_FRM_LEN                  1200                            //声纹计算的窗长，单位为ms，建议范围1200-1500，值越大消耗内存越多（每增加100，内存增加8KB）
-#define VP_CMPT_SKIP_NUM                0
-#define VPT_SIZE                        (192*sizeof(float))             //模板大小-不可修改
-#define NVDATA_ID_VP_NUMBER             NVDATA_ID_VP_MOULD_INFO         //存储已添加了的模板数量-不可修改
-#define VP_SLIDE_TIME_PER_CMPT          1                               //声纹每次计算，滑窗的次数-不可修改
-#define WMAN_PLAY_EN                    1                               //男女声纹识别播报
-#endif
-#if     USE_VPR
-#define VP_USE_FRM_LEN                  1200      //声纹计算的窗长，单位为ms, 建议范围1200-1500，值越大消耗内存越多（每增加100，内存增加8KB）
-#define VP_CMPT_SKIP_NUM                0         //-不可修改
-#define VP_THR_FOR_MATCH                (0.52f)   //声纹阈值-建议范围(0.48-0.68)，值越大，灵敏度越低，误识越低，识别率下降，需要更严格的匹配注册的模版
-#define VP_THR_FOR_SAME_MATCH           (0.50f)   //同一用户，判断是否重复所用声纹阈值-不可修改
-#define VP_SLIDE_TIME_PER_CMPT          3         //声纹每次计算，滑窗-不可修改
-#define VP_REC_TIMES                    3         //声纹注册时重复录入次数 -注册时的次数
-#define MAX_VP_TEMPLATE_NUM             3         //声纹识别功能允许的最大模版(用户)数,最大4个 重要说明：每个模版单次约占0.8KB NV空间，三次2.4KB
-
-#define MAX_VP_REG_TIME                 10        //注册声纹时最大超时等待时间（秒)
-#define VPT_SIZE                        (192*sizeof(float))   //模板大小  -不可修改
-#define NVDATA_ID_VP_NUMBER             0xA0000001      //存储模板数量NV基地址 -不可修改
-#define NVDATA_ID_VP_INFO               0xA0000002      //存储模板ID NV基地址，每个用户模版数是重复录入次数-不可修改
-                                                        //输出给用户的id就是（地址-0xA0000002/VP_REC_TIMES 
-#define NVDATA_ID_VP_MODE               0xA0000003      //存储模板NV基地址 -不可修改
-#if (MAX_VP_TEMPLATE_NUM > 4)
-#error "The vpr template num max 4\n"
-#endif
-#endif
-
-#if USE_SED_CRY || USE_SED_SNORE
-#define NO_ASR_FLOW                     1         //不可修改
-#if     USE_SED_CRY
-#define THRESHOLD_CRY                   0.53f     //可根据具体需求修改,范围为(0~1)float类型-建议范围(0.5-0.6f),值越大，灵敏度越低
-#define TIMES_CRY                       3         //可根据具体需求修改,最大5次(算法计算几次给结果)
-#elif   USE_SED_SNORE
-#define THRESHOLD_SNORE                 0.50f     //可根据具体需求修改,范围为(0~1)float类型-建议范围(0.5-0.6f),值越大，灵敏度越低
-#define TIMES_SNORE                     3         //可根据具体需求修改,最大5次(算法计算几次给结果)
-#endif
-
-#if TIMES_CRY > 5
-#error "The times should be less than or equal to 5\n"
-#endif        
-#endif
-
 #if USE_AI_DOA
 #define AI_DOA_OUT_TYPE                 3         //doa输出类型：1-唤醒词输出角度  2-命令词输出角度 3-唤醒次和命令词都输出角度
-#endif
-
-#if USE_TTS
-#define UART_TTS_NUMBER         HAL_UART1_BASE          //TTS文本合成通信串口号
-#define UART_TTS_IRQ            UART1_IRQn              //TTS文本合成通信串口中断号
-#define UART_TTS_BAUDRATE       UART_BaudRate115200     //TTS文本合成通信串口波特率
 #endif
 
 #if (!USE_BEAMFORMING_MODULE && !USE_DEREVERB_MODULE &&  !USE_AI_DOA) 
@@ -255,9 +177,6 @@ chipintelli提供的部分开发板和模组，可以通过下面的宏选择，
 #endif
 
 #if USE_BEAMFORMING_MODULE  || USE_AI_DOA || USE_DEREVERB_MODULE || USE_DUAL_MIC_ANY
-#if USE_CI_D12GS01J_BOARD
- #error "USE_CI_D12GS01J_BOARD not support dual mic alg !\n"    //131x不支持双mic算法
-#endif
 #define HOST_CODEC_CHA_NUM  2
 #define OFFLINE_DUAL_MIC_ALG_SUPPORT    1
 #else
@@ -280,18 +199,8 @@ chipintelli提供的部分开发板和模组，可以通过下面的宏选择，
     #endif
 #endif
 
-
-#if USE_CI_D12GS01J_BOARD
-#if USE_BEAMFORMING_MODULE  || USE_AI_DOA || USE_DEREVERB_MODULE || USE_DUAL_MIC_ANY
- #error "USE_CI_D12GS01J_BOARD not support aec and dual mic alg!\n"    //131x不支持aec和双 mic算法
-#endif
-#endif
-
 #if USE_AEC_MODULE && (USE_BEAMFORMING_MODULE  || USE_AI_DOA || USE_DEREVERB_MODULE || USE_DUAL_MIC_ANY)  //双mic + aec算法必须外部挂codec作为信号回采(推荐7243e)
 #define IF_USE_ANOTHER_CODEC_TO_GET_REF 1
-#if USE_CUS_D06GS09S_BOARD != 1   //必须外挂codec使用USE_CUS_D06GS09S_BOARD板级
-#error "dual mic alg + aec , must use USE_CUS_D06GS09S_BOARD board\n"
-#endif
 #endif
 #if USE_BEAMFORMING_MODULE && USE_PWK
  #error "bf + pwk algorithm, not support\n"

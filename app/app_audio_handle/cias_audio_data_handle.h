@@ -6,7 +6,7 @@
 
 
 #define NEWORK_RECV_QUEUE_ENABLE                        1    //网络端串口数据入队列
-#define CIAS_DOUBLE_MIC_DEMO_ENABLE                     1    //双mic demo功能-离在线
+#define CIAS_DOUBLE_MIC_DEMO_ENABLE                     0    //双mic demo功能-离在线
 #define AUDIO_PLAY_USE_OUTSIDE                          (1)
 
 #if VOICE_PLAY_BY_UART

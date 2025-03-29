@@ -467,6 +467,450 @@ void audio_player_param_init()
         mprintf("mp3_player alloc error %x\n", mp3_player);
     else
         ci_loginfo(LOG_MEDIA, "mp3_player alloc success\n");
-    set_curr_outside_handle(mp3_player, mp3_player_end);
+    m4a_player = mp3_player;
+    m4a_player_end = mp3_player_end;
+    wav_player = mp3_player;
+    wav_player_end = mp3_player_end;
+
+    tts_player = mp3_player;
+    tts_player_end = mp3_player_end;
+
+    if (tts_player == NULL)
+    {
+        ci_logerr(LOG_MEDIA, "tts_player alloc error\n");
+    }
+    set_curr_outside_handle(tts_player, tts_player_end);
 }
+
+extern bool no_audio_data_flag;
+extern bool recv_music_end_sem;
+
+/**
+ * Network broadcast processing
+ *
+ */
+
+int32_t network_audio_processing(uint8_t *msg_buf)
+{
+    int32_t ret = RETURN_OK;
+    static int32_t recv_music_data_len = 0;
+    static int32_t recv_net_mp3_num = 0;
+    static int16_t recv_resume_cmd_num = 0;
+
+    cias_data_standard_head_t *pheader = (cias_data_standard_head_t *)(msg_buf);
+    wifi_communicate_cmd_t wifi_cmd = (wifi_communicate_cmd_t)pheader->type;
+
+
+    switch (wifi_cmd)
+    {
+
+            /*云端播放数据*/
+            case PLAY_DATA_GET:
+            {
+                if (pheader->len == 0)
+                {
+                    ci_logdebug(LOG_MEDIA, "pheader->len = %d\n", pheader->len);
+                    ret = RETURN_ERR;
+                    break;
+                }
+
+                int ret_tts = outside_write_stream(cur_play_stream, (uint32_t)(msg_buf + 16), pheader->len, false);
+                if (RETURN_OK == ret_tts)
+                {
+                    if (recv_net_mp3_num == 0)
+                    {
+                        if ((get_net_player_status(get_net_play_type()) == NET_PLAYER_RESUME) && (recv_music_data_len == 0))
+                        {
+                            if (0 != memcmp(get_next_resume_play_data(), (uint8_t *)(msg_buf + 16), 8))
+                            {
+                                ci_loginfo(LOG_MEDIA, "error first packet\n");
+                                for (int32_t w = 0; w < 8; w++)
+                                {
+                                    ci_loginfo(LOG_MEDIA, "0x%x ", *(uint8_t *)(msg_buf + 16 + w));
+                                    mprintf("0x%x ", *(uint8_t *)(msg_buf + 16 + w));
+                                }
+                                ci_loginfo(LOG_MEDIA, "\n");
+                                mprintf("\n");
+                                set_net_player_status(get_net_play_type(), NET_PLAYER_IDLE);
+                                cias_send_cmd(NET_PLAY_NEXT, DEF_FILL);
+                            }
+                            else
+                            {
+                                ci_loginfo(LOG_MEDIA, "resume ok\n");
+                            }
+                        }
+                    }
+                    recv_music_data_len += pheader->len;
+                    recv_net_mp3_num += pheader->len;
+                    recv_resume_cmd_num = 0;
+                    // mprintf("write data ok!  (%d)recv_net_mp3_num = %d size = %d pheader->len = %d\n", recv_music_data_len, recv_net_mp3_num, audio_play_stream_buffer_get_spaces_size(cur_play_stream), pheader->len);
+                }
+                else
+                {
+                    ci_logdebug(LOG_MEDIA, "write data fail!\n");
+                }
+
+                if(recv_net_mp3_num >= PLAY_BUF_SIZE_MAX) start_recv_flag = true;
+                if ((recv_music_data_len >= PLAY_BUF_SIZE_MAX ) && (get_net_player_status(get_net_play_type()) == NET_PLAYER_READY))
+                {                           //18
+                    ci_logdebug(LOG_MEDIA, "write data get_net_play_type =%d\n", get_net_play_type());
+                    if (get_net_play_type() == PLAY_MP3)
+                    {
+                        play_with_outside(0, "mp3", mp3_player_end_callbk);
+                        set_net_player_status(PLAY_MP3, NET_PLAYER_START);
+                    }
+                    else if (get_net_play_type() == PLAY_TTS)
+                    {
+                        play_with_outside(0, "mp3", tts_player_end_callbk);
+                        set_net_player_status(PLAY_TTS, NET_PLAYER_START);
+                        get_response_timer_cnt();
+                    }
+                    else if (get_net_play_type() == PLAY_M4A)
+                    {
+                        play_with_outside(0, "m4a", m4a_player_end_callbk);
+                        set_net_player_status(PLAY_M4A, NET_PLAYER_START);
+                    }
+                    else if (get_net_play_type() == PLAY_WAV)
+                    {
+                        play_with_outside(0, "ms_wav", wav_player_end_callbk);
+                        set_net_player_status(PLAY_WAV, NET_PLAYER_START);
+                    }
+                    // ci_logdebug(LOG_MEDIA, "--start playing-- play_type1 = %d\n", get_net_play_type());
+                    no_audio_data_flag = false;
+                }
+                else if (((recv_music_data_len >= 20 * 1024) && (get_net_player_status(get_net_play_type()) == NET_PLAYER_RESUME) && (no_audio_data_flag)))
+                {                                 //22
+                    if (get_net_play_type() == PLAY_MP3)
+                    {
+                        play_with_outside(get_music_data_offset(), "history", mp3_player_end_callbk);
+                        set_net_player_status(PLAY_MP3, NET_PLAYER_START);
+                    }
+                    else if (get_net_play_type() == PLAY_TTS)
+                    {
+                        play_with_outside(get_music_data_offset(), "history", tts_player_end_callbk);
+                        set_net_player_status(PLAY_TTS, NET_PLAYER_START);
+                        get_response_timer_cnt();
+                    }
+                    else if (get_net_play_type() == PLAY_M4A)
+                    {
+                        play_with_outside(get_music_data_offset(), "history", m4a_player_end_callbk);
+                        set_net_player_status(PLAY_M4A, NET_PLAYER_START);
+                    }
+                    else if (get_net_play_type() == PLAY_WAV)
+                    {
+                        play_with_outside(get_music_data_offset(), "history", wav_player_end_callbk);
+                        set_net_player_status(PLAY_WAV, NET_PLAYER_START);
+                    }
+                    ci_logdebug(LOG_MEDIA, "--start playing-- play_type2 = %d\n", get_net_play_type());
+                    no_audio_data_flag = false;
+                }
+                else if (((recv_music_data_len >= 20 * 1024) && (get_net_player_status(get_net_play_type()) == NET_PLAYER_RESUME) && (!no_audio_data_flag)))
+                {                                //22
+                    if (get_net_play_type() == PLAY_MP3)
+                    {
+                        play_with_outside(get_music_data_offset(), "history", mp3_player_end_callbk);
+                        set_net_player_status(PLAY_MP3, NET_PLAYER_START);
+                    }
+                    else if (get_net_play_type() == PLAY_TTS)
+                    {
+                        play_with_outside(get_music_data_offset(), "history", tts_player_end_callbk);
+                        set_net_player_status(PLAY_TTS, NET_PLAYER_START);
+                        get_response_timer_cnt();
+                    }
+                    else if (get_net_play_type() == PLAY_M4A)
+                    {
+                        play_with_outside(get_music_data_offset(), "history", m4a_player_end_callbk);
+                        set_net_player_status(PLAY_M4A, NET_PLAYER_START);
+                    }
+                    else if (get_net_play_type() == PLAY_WAV)
+                    {
+                        play_with_outside(get_music_data_offset(), "history", wav_player_end_callbk);
+                        set_net_player_status(PLAY_WAV, NET_PLAYER_START);
+                    }
+                    ci_logdebug(LOG_MEDIA, "--start playing-- play_type3 = %d\n", get_net_play_type());
+                    no_audio_data_flag = false;
+                }
+                break;
+            }
+            /*开始播放*/
+            case NET_PLAY_START:
+            {
+
+                if (check_current_playing())
+                {
+                    cias_send_cmd(NET_PLAY_LOCAL_TTS, NO_WAKEUP_FILL_DATA);
+                    ci_logdebug(LOG_MEDIA, "NET_PLAY_START error under playing\n");
+                    // ret = RETURN_ERR;
+                    // break;
+                }
+
+                // set_machine_status(WIFI_LINK_STATUS,1);
+                recv_resume_cmd_num = 0;
+                recv_music_end_sem = false;
+                recv_music_data_len = 0;
+                recv_net_mp3_num = 0;
+                start_recv_flag = false;
+
+                // ci_logdebug(LOG_MEDIA,"pheader->fill_data(%d)\n",pheader->fill_data);
+                if (pheader->fill_data == INVAILD_SPEAK)
+                {
+                    ci_logdebug(LOG_MEDIA, "INVAILD_SPEAK\n");
+                    // send_cloud_return(CLOUD_RETURN_INVAILD);
+                    if (get_voice_invalid())
+                    {
+                        cias_send_cmd(SKIP_INVAILD_SPEAK, DEF_FILL);
+                        // enter_next_dialogue(4000);
+                        break;
+                    }
+                    cur_play_stream = tts_player;
+                    set_net_play_type(PLAY_TTS);
+                    outside_clear_stream(tts_player, tts_player_end);
+                    set_curr_outside_handle(tts_player, tts_player_end);
+                    ci_logdebug(LOG_MEDIA, " receive TTS start 1 !\n");
+                    cias_send_cmd(PLAY_DATA_GET, DEF_FILL);
+                    set_net_player_status(PLAY_TTS, NET_PLAYER_READY);
+                    media_play.start_play = START_PLAY_TTS;
+                }
+                else if (pheader->fill_data == RECV_TTS_PLAY)
+                {
+
+                    cur_play_stream = tts_player;
+                    set_net_play_type(PLAY_TTS);
+                    outside_clear_stream(tts_player, tts_player_end);
+                    set_curr_outside_handle(tts_player, tts_player_end);
+                    ci_logdebug(LOG_MEDIA, "receive TTS start 2 !\n");
+                    cias_send_cmd(PLAY_DATA_GET, DEF_FILL);
+                    set_net_player_status(PLAY_TTS, NET_PLAYER_READY);
+                    media_play.start_play = START_PLAY_TTS;
+                }
+                else if (pheader->fill_data == RECV_MP3_PLAY)
+                {
+                    // send_cloud_return(CLOUD_RETURN_VAILD);
+                    cur_play_stream = mp3_player;
+                    set_net_play_type(PLAY_MP3);
+                    outside_clear_stream(mp3_player, mp3_player_end);
+                    set_curr_outside_handle(mp3_player, mp3_player_end);
+                    ci_logdebug(LOG_MEDIA, "receive MP3 start!\n");
+                    cias_send_cmd(PLAY_DATA_GET, DEF_FILL);
+                    set_net_player_status(PLAY_MP3, NET_PLAYER_READY);
+                    set_music_data_offset(0);
+                    //ci_logdebug(LOG_MEDIA, "receive MP3 start! change to music *************\n");
+#if USE_BEAMFORMING_MODULE
+                    ciss_set(CI_SS_PLAY_TYPE,CI_SS_PLAY_TYPE_MUSIC);
 #endif
+                }
+                else if (pheader->fill_data == RECV_M4A_PLAY)
+                {
+                    // send_cloud_return(CLOUD_RETURN_VAILD);
+                    cur_play_stream = m4a_player;
+                    set_net_play_type(PLAY_M4A);
+                    outside_clear_stream(m4a_player, m4a_player_end);
+                    set_curr_outside_handle(m4a_player, m4a_player_end);
+                    ci_logdebug(LOG_MEDIA, "receive M4a start!\n");
+                    cias_send_cmd(PLAY_DATA_GET, DEF_FILL);
+                    set_net_player_status(PLAY_M4A, NET_PLAYER_READY);
+                    set_music_data_offset(0);
+#if USE_BEAMFORMING_MODULE
+                    ciss_set(CI_SS_PLAY_TYPE,CI_SS_PLAY_TYPE_MUSIC);
+#endif
+                    media_play.start_play = START_PLAY_M4A;
+
+                }
+                else if (pheader->fill_data == RECV_WAV_PLAY)
+                {
+                    // send_cloud_return(CLOUD_RETURN_VAILD);
+                    cur_play_stream = wav_player;
+                    set_net_play_type(PLAY_WAV);
+                    outside_clear_stream(wav_player, wav_player_end);
+                    set_curr_outside_handle(wav_player, wav_player_end);
+                    ci_logdebug(LOG_MEDIA, "receive WAV start!\n");
+                    cias_send_cmd(PLAY_DATA_GET, DEF_FILL);
+                    set_net_player_status(PLAY_WAV, NET_PLAYER_READY);
+                    set_music_data_offset(0);
+                }
+                break;
+            }
+            /*结束播放*/
+            case NET_PLAY_STOP:
+            {
+                ci_logdebug(LOG_MEDIA, "receive media stop!\n");
+                // send_cloud_return(CLOUD_RETURN_VAILD);
+                if (SYS_STATE_WAKEUP != get_wakeup_state())
+                {
+                    // stop_net_player();
+                    pause_play(NULL, NULL);
+                }
+
+                break;
+            }
+            /*暂停播放*/
+            case NET_PLAY_PAUSE:
+            {
+                ci_logdebug(LOG_MEDIA, "receive mp3 pause!\n");
+                if (get_net_play_type() == PLAY_M4A)
+                {
+                    pause_play(NULL, NULL);
+                }
+
+                break;
+            }
+            /*继续播放*/
+            case NET_PLAY_RESUME :
+            {
+                ci_logdebug(LOG_MEDIA, "receive resume! fill_data = 0x%x\n", pheader->fill_data);
+                if (recv_resume_cmd_num > 0)
+                {
+                    recv_resume_cmd_num = 0;
+                    cias_send_cmd(NET_PLAY_NEXT, DEF_FILL);
+                    ci_logdebug(LOG_MEDIA, "resume recv 2 times\n");
+                }
+                if (check_current_playing())
+                {
+                    ci_logdebug(LOG_MEDIA, "resume error under playing\n");
+                    ret = RETURN_ERR;
+                    break;
+                }
+                recv_music_data_len = 0;
+
+                recv_music_end_sem = false;
+                recv_net_mp3_num = 0;
+                start_recv_flag = false;
+                if ((get_net_player_status(PLAY_MP3) == NET_PLAYER_PAUSE) && ((pheader->fill_data == RECV_MP3_PLAY)))
+                {
+                    set_net_play_type(PLAY_MP3);
+                    cur_play_stream = mp3_player;
+                    set_curr_outside_handle(mp3_player, mp3_player_end);
+                    outside_clear_stream(mp3_player, mp3_player_end);
+                    set_net_player_status(PLAY_MP3, NET_PLAYER_RESUME);
+                    cias_send_cmd(PLAY_DATA_GET, get_music_data_offset());
+                    ci_logdebug(LOG_MEDIA, "recv next data 2\n");
+                }
+                else if ((get_net_player_status(PLAY_M4A) == NET_PLAYER_PAUSE) && ((pheader->fill_data == RECV_M4A_PLAY)) || (pheader->fill_data == IDLE_STATUS_RECV_M4A_PLAY))
+                {
+                    set_net_play_type(PLAY_M4A);
+                    cur_play_stream = m4a_player;
+                    set_curr_outside_handle(m4a_player, m4a_player_end);
+                    outside_clear_stream(m4a_player, m4a_player_end);
+                    set_net_player_status(PLAY_M4A, NET_PLAYER_RESUME);
+                    cias_send_cmd(PLAY_DATA_GET, get_music_data_offset());
+                    ci_logdebug(LOG_MEDIA, "recv next data 3\n");
+                }
+                else if ((get_net_player_status(PLAY_WAV) == NET_PLAYER_PAUSE) && ((pheader->fill_data == RECV_WAV_PLAY)))
+                {
+                    set_net_play_type(PLAY_WAV);
+                    cur_play_stream = wav_player;
+                    set_curr_outside_handle(wav_player, wav_player_end);
+                    outside_clear_stream(wav_player, wav_player_end);
+                    set_net_player_status(PLAY_WAV, NET_PLAYER_RESUME);
+                    cias_send_cmd(PLAY_DATA_GET, get_music_data_offset());
+                    ci_logdebug(LOG_MEDIA, "recv next data 4\n");
+                }
+                else
+                {
+                    if ((get_net_player_status(PLAY_M4A) == NET_PLAYER_IDLE) && (get_net_player_status(PLAY_MP3) == NET_PLAYER_IDLE) && (get_net_player_status(PLAY_WAV) == NET_PLAYER_IDLE))
+                    {
+                        cias_send_cmd(NET_PLAY_NEXT, DEF_FILL);
+                        ci_logdebug(LOG_MEDIA, "resume error NET_PLAYER_IDLE\n");
+                    }
+                    else
+                    {
+                        ci_logdebug(LOG_MEDIA, "resume not pasue error\n");
+                        ++recv_resume_cmd_num;
+                    }
+                }
+
+                break;
+            }
+
+            /*语音数据接收完*/
+            case PLAY_DATA_END:
+            {
+                rev_voice_end_flag = true;
+                //ci_logdebug(LOG_MEDIA, "recv end recv_music_data_len = %d!\n", recv_music_data_len);
+
+                recv_music_end_sem = true;
+                recv_net_mp3_num = 0;
+
+                if (get_net_player_status(get_net_play_type()) == NET_PLAYER_START)
+                {
+                    if (get_net_play_type() == PLAY_TTS)
+                    {
+                        outside_send_end_sem(tts_player_end);
+                    }
+                    else if (get_net_play_type() == PLAY_MP3)
+                    {
+                        outside_send_end_sem(mp3_player_end);
+                    }
+                    else if (get_net_play_type() == PLAY_M4A)
+                    {
+                        outside_send_end_sem(m4a_player_end);
+                    }
+                    else if (get_net_play_type() == PLAY_WAV)
+                    {
+                        outside_send_end_sem(wav_player_end);
+                    }
+                    ci_logdebug(LOG_MEDIA, "send_end_sem2 play_type = %d\n", get_net_play_type());
+                }
+                else if (get_net_player_status(get_net_play_type()) == NET_PLAYER_RESUME)
+                {
+                    if (get_net_play_type() == PLAY_MP3)
+                    {
+                        play_with_outside(get_music_data_offset(), "history", mp3_player_end_callbk);
+                        set_net_player_status(PLAY_MP3, NET_PLAYER_START);
+                        outside_send_end_sem(mp3_player_end);
+                    }
+                    else if (get_net_play_type() == PLAY_TTS)
+                    {
+                        play_with_outside(get_music_data_offset(), "history", tts_player_end_callbk);
+                        set_net_player_status(PLAY_TTS, NET_PLAYER_START);
+                        outside_send_end_sem(tts_player_end);
+                    }
+                    else if (get_net_play_type() == PLAY_M4A)
+                    {
+                        play_with_outside(get_music_data_offset(), "history", m4a_player_end_callbk);
+                        set_net_player_status(PLAY_M4A, NET_PLAYER_START);
+                        outside_send_end_sem(m4a_player_end);
+                    }
+                    else if (get_net_play_type() == PLAY_WAV)
+                    {
+                        play_with_outside(get_music_data_offset(), "history", wav_player_end_callbk);
+                        set_net_player_status(PLAY_WAV, NET_PLAYER_START);
+                        outside_send_end_sem(wav_player_end);
+                    }
+                }
+                else if (get_net_player_status(get_net_play_type()) == NET_PLAYER_READY)
+                {
+                    if (get_net_play_type() == PLAY_MP3)
+                    {
+                        set_net_player_status(PLAY_MP3, NET_PLAYER_START);
+                        play_with_outside(0, "mp3", mp3_player_end_callbk);
+                        outside_send_end_sem(mp3_player_end);
+                    }
+                    else if (get_net_play_type() == PLAY_TTS)
+                    {
+                        set_net_player_status(PLAY_TTS, NET_PLAYER_START);
+                        play_with_outside(0, "mp3", tts_player_end_callbk);
+                        outside_send_end_sem(tts_player_end);
+                    }
+                    else if (get_net_play_type() == PLAY_M4A)
+                    {
+                        set_net_player_status(PLAY_M4A, NET_PLAYER_START);
+                        play_with_outside(0, "m4a", m4a_player_end_callbk);
+                        outside_send_end_sem(m4a_player_end);
+                    }
+                    else if (get_net_play_type() == PLAY_WAV)
+                    {
+                        set_net_player_status(PLAY_WAV, NET_PLAYER_START);
+                        play_with_outside(0, "ms_wav", wav_player_end_callbk);
+                        outside_send_end_sem(wav_player_end);
+                    }
+                    ci_logdebug(LOG_MEDIA, "Start net player\n");
+                }
+                break;
+            }
+
+
+    }
+    return 0;
+}
+#endif //VOICE_PLAY_BY_UART

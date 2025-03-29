@@ -20,7 +20,6 @@ int cias_audio_data_transmission(void)
     #endif
 
     #if VOICE_UPLOAD_BY_UART
-    network_port_init();
     xTaskCreate(network_send_data_task, "send_uart_audio", 256, NULL, 4, NULL);       //通过串口上传语音任务
     voice_upload_task_init();
     #endif

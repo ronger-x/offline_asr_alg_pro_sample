@@ -348,7 +348,8 @@ static void task_init(void *p_arg)
     alg_cloud_protocol_init();
     #endif
     #if (VOICE_UPLOAD_BY_UART || VOICE_PLAY_BY_UART)
-    cias_audio_data_transmission();
+    network_port_init();                 //初始化网络端串口
+    cias_audio_data_transmission();      //初始化音频传输
     #endif
     /*user app初始化*/
     userapp_initial();
