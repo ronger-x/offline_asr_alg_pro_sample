@@ -13,6 +13,8 @@
 #include "cias_voice_upload.h"
 #include "FreeRTOS.h"
 #include "audio_play_decoder.h"
+#include "sdk_default_config.h"
+#include "user_config.h"
 #if AUDIO_COMPRESS_SPEEX_ENABLE
 #include "ci110x_speex.h"
 #include "sb_celp.h"

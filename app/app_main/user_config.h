@@ -37,6 +37,14 @@ chipintelli提供的部分开发板和模组，可以通过下面的宏选择，
 #define UPLOAD_RAM_VOICE_DATA_BY_UART_ENABLE            0       //通过串口上传原始数据
 #define TASK_MONITOR_ENABLE                             0       //系统监控任务使能，带开门狗
 
+#define NETWORK_PORT_NUM                                UART1 //网络端交互的串口
+#define NETWORK_PORT_BAUDRATE                           UART_BaudRate921600 //网络端交互的串口波特率
+#define NETWORK_RECV_BUFF_MAX_LEN                       (1024*2)//网络端串口交互数据接收缓冲区大小
+#define RECV_PCM_DATA_SIZE                              (1152*2)//(320*8)
+
+#define NETWORK_SEND_BUFF_MAX_LEN                       (1024)   //网络端串口交互数据发送缓冲区大小
+
+
 #ifndef HOST_MIC_USE_NUMBER
 #define HOST_MIC_USE_NUMBER            1   //定义mic数量
 #endif
@@ -107,9 +115,9 @@ chipintelli提供的部分开发板和模组，可以通过下面的宏选择，
 #define USE_NIGHT_LIGHT                 1
 #endif
 #endif
-//#define USE_NULL						1
+#define USE_NULL						1
 //*语音上传和播放配置(通过串口)
-#define VOICE_UPLOAD_BY_UART               (0)                   //通过串口上传语音功能配置，消耗75KB内存
+#define VOICE_UPLOAD_BY_UART               (1)                   //通过串口上传语音功能配置，消耗75KB内存
 #define AUDIO_COMPRESS_SPEEX_ENABLE         1                    //音频压缩算法。 1-处理使能SPEEX压缩后的数据 0-直接传输PCM数据
 #if (VOICE_UPLOAD_BY_UART&&(!USE_NULL||USE_PWK))                 //语音上传功能不能开算法
 #error "ONLY USE_NULL WITH NO PWK SUPPORT VOICE_UPLOAD_BY_UART!"
@@ -126,6 +134,19 @@ chipintelli提供的部分开发板和模组，可以通过下面的宏选择，
 #define AUDIO_PLAY_USE_OUTSIDE      (1)                          //启用自定义外部数据源播放
 #endif
 
+#define NEWORK_RECV_QUEUE_ENABLE                        1    //网络端串口数据入队列
+
+#if VOICE_PLAY_BY_UART
+#define IOT_AUDIO_PLAY_BUF_SIZE            (36 * 1024) //
+#define PLAY_BUF_SIZE_MAX                  (10 * 1024)  //超过此大小开始从网络获取下一帧数据
+#if PCM_VOICE_PLAY_BY_UART
+#define UART_VOICE_BAUD     UART_BaudRate921600
+#define UART_VOICE_LEN      1024
+#elif MP3_VOICE_PLAY_BY_UART
+#define UART_VOICE_BAUD     UART_BaudRate921600
+#define UART_VOICE_LEN      1
+#endif
+#endif
 
 #define NEWORK_RECV_QUEUE_ENABLE        1    //网络端串口数据入队列
 #define CIAS_SIGNAL_MIC_DEMO_ENABLE     1    //单 mic demo功能-离在线

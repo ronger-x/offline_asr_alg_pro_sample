@@ -11,6 +11,7 @@
 #include <stdbool.h>
 #include "cias_common.h"
 #include "system_msg_deal.h"
+#include "queue.h"
 
 #ifdef __cplusplus
 extern "C"

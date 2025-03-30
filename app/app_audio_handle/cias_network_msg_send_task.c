@@ -7,6 +7,7 @@
 #include "semphr.h"
 #include "ci_log.h"
 #include "sdk_default_config.h"
+#include "user_config.h"
 #include "cias_network_msg_protocol.h"
 #include "cias_network_msg_send_task.h"
 #include "ci130x_uart.h"

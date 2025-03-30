@@ -169,36 +169,36 @@ int32_t aiot_callback(uint8_t *msg_buf)
         
         case GET_PROFILE:
         {
-            ci_logdebug(LOG_MEDIA, "RECV GET PROFILE CMD\n");
-            cias_send_profile();
-            while(CI_SS_PLAY_STATE_PLAYING == ciss_get(CI_SS_PLAY_STATE))
-            {
-                vTaskDelay(1000);
-            }
-            prompt_play_by_cmd_id(1004, -1, play_done_callback, true);
+//            ci_logdebug(LOG_MEDIA, "RECV GET PROFILE CMD\n");
+//            cias_send_profile();
+//            while(CI_SS_PLAY_STATE_PLAYING == ciss_get(CI_SS_PLAY_STATE))
+//            {
+//                vTaskDelay(1000);
+//            }
+//            prompt_play_by_cmd_id(1004, -1, play_done_callback, true);
             break;
          }
         case NEED_PROFILE:
         {
-            while(CI_SS_PLAY_STATE_PLAYING == ciss_get(CI_SS_PLAY_STATE))
-            {
-                vTaskDelay(1000);
-            }
-            ci_logdebug(LOG_MEDIA, "RECV NEED PROFILE CMD\n");
-            prompt_play_by_cmd_id(1005, -1, play_done_callback, true);
+//            while(CI_SS_PLAY_STATE_PLAYING == ciss_get(CI_SS_PLAY_STATE))
+//            {
+//                vTaskDelay(1000);
+//            }
+//            ci_logdebug(LOG_MEDIA, "RECV NEED PROFILE CMD\n");
+//            prompt_play_by_cmd_id(1005, -1, play_done_callback, true);
             break;
         }
 
         case QCLOUD_IOT_CMD:
         {
-            unsigned short qcloud_cmd;
-
-            qcloud_cmd = *((unsigned short *)(msg_buf + 16));
-            ci_logdebug(LOG_MEDIA, "[ qcloud ]recv cmd: %d\n", qcloud_cmd);
-            // tanmi_uart_send_msg_to_elc(qcloud_cmd&0xff,0x02);
-
-            pause_voice_in();
-            prompt_play_by_cmd_id(qcloud_cmd, -1, play_done_callback, true);
+//            unsigned short qcloud_cmd;
+//
+//            qcloud_cmd = *((unsigned short *)(msg_buf + 16));
+//            ci_logdebug(LOG_MEDIA, "[ qcloud ]recv cmd: %d\n", qcloud_cmd);
+//            // tanmi_uart_send_msg_to_elc(qcloud_cmd&0xff,0x02);
+//
+//            pause_voice_in();
+//            prompt_play_by_cmd_id(qcloud_cmd, -1, play_done_callback, true);
             break;
         }       
         case VAD_END:  //云端VAD结束

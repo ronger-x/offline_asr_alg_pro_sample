@@ -7,7 +7,8 @@
  */
 #include "audio_play_api.h"
 #include "cias_voice_plyer_handle.h"
-#include "cias_audio_data_handle.h"
+#include "cias_common.h"
+#include "user_config.h"
 #include "status_share.h"
 
 media_play_resume_control media_play;
@@ -306,7 +307,7 @@ void m4a_player_end_callbk(int32_t play_cb_state)
             media_play.acc_decode_fail = false;
             ci_loginfo(LOG_USER, "\r\n NET_PLAY_RESTART=============\r\n");
             cias_send_cmd(NET_PLAY_RESTART, DEF_FILL);
-            change_acc_decode_size();
+//            change_acc_decode_size();
         }
         else if (media_play.recv_media_stream_end)
         {
