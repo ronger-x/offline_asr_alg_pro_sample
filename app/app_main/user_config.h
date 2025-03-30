@@ -11,6 +11,32 @@ chipintelli提供的部分开发板和模组，可以通过下面的宏选择，
 #define CI_CHIP_TYPE                1303    //flash:2MB,SSOP24
 #define BOARD_PORT_FILE             "CI-D03GS02S.c"
 
+
+/*****************************************************离线功能选择*******************************************/
+#define CONFIG_SYSTEMVIEW_EN                            0   //不使能systemview
+#define AUDIO_PLAYER_ENABLE                             1   //用于屏蔽播放器任务相关代码      0：屏蔽，1：开启
+#if AUDIO_PLAYER_ENABLE                                     //播放器功能使能
+#define USE_PROMPT_DECODER                              1   //播放器是否支持prompt解码器
+#define USE_MP3_DECODER                                 1   //为1时加入mp3解码器
+#define AUDIO_PLAY_SUPPT_MP3_PROMPT                     1   //播放器默认开启mp3播报音
+#define USE_AAC_DECODER                                 1   //播报器是否开启m4a(aac)解码
+#define USE_MS_WAV_DECODER                              1   //播放器是否支持ms wav解码器
+#define AUDIO_PLAY_ENABLE                               1   //开启播报
+#define AUDIO_PLAY_USE_MIX_2_CHANS                      1   //启用播放器双声道混音到右声道功能
+#define AUDIO_PLAYER_CONFIG_AUTO_PARSE_AUDIO_FILE       1   //自动音频识别文件头(消耗额外内存,播放m4a、flac、非单声道16Kwav音频格式时必须打开)
+#define AUDIO_PLAY_BLOCK_CONT                           4   //播放器底层缓冲区个数
+#define AUDIO_PLAYER_FIX_OFFSET_ISSUE                   1   //用于解决应用程序可能存在的偏移不对齐问题
+#define PLAY_WELCOME_EN                                 1   //欢迎词播报   =1是 =0否
+#define PLAY_ENTER_WAKEUP_EN                            1   //唤醒词播报   =1是 =0否
+#define PLAY_OTHER_CMD_EN                               1   //命令词播报    =1是 =0否
+#endif
+
+/******************************************离在线功能选择********************************************/
+#define UPLOAD_PROCESSED_VOICE_DATA_BY_NET_ENABLE       1       //通过网络上传压缩后的语音数据到云端
+#define UPLOAD_PROCESSED_VOICE_DATA_BY_UART_ENABLE      0       //通过串口上传前端处理后数据
+#define UPLOAD_RAM_VOICE_DATA_BY_UART_ENABLE            0       //通过串口上传原始数据
+#define TASK_MONITOR_ENABLE                             0       //系统监控任务使能，带开门狗
+
 #ifndef HOST_MIC_USE_NUMBER
 #define HOST_MIC_USE_NUMBER            1   //定义mic数量
 #endif
@@ -115,7 +141,7 @@ chipintelli提供的部分开发板和模组，可以通过下面的宏选择，
 
 #define PLAY_WELCOME_EN                 1      //是否在启动时播放开机提示音。1:是 0:否。
 #define PLAY_ENTER_WAKEUP_EN            1      //是否在唤醒时播放提示音。1:是 0:否。
-#define PLAY_EXIT_WAKEUP_EN             1      //是否在切换到只监听唤词状态时播放提示音。1:是 0:否。
+#define PLAY_EXIT_WAKEUP_EN             0      //是否在切换到只监听唤词状态时播放提示音。1:是 0:否。
 #define PLAY_OTHER_CMD_EN               1      //是否在识别到命令词时播放提示音。1:是 0:否。
 #define ADAPTIVE_THRESHOLD              0
 #define ASR_SKIP_FRAME_CONFIG           0

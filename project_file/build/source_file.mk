@@ -455,6 +455,11 @@ OBJS += build/objs/user_msg_deal.o
 build/objs/user_msg_deal.o : $(SDK_PATH)/projects/offline_asr_alg_pro_sample/app/app_main/user_msg_deal.c
 	$(CC_PREFIX)$(CC) $(C_FLAGS) -c -o "$@" "$<"
 
+OBJS += build/objs/aiot_callback.o
+-include build/objs/aiot_callback.d
+build/objs/aiot_callback.o : $(SDK_PATH)/projects/offline_asr_alg_pro_sample/app/app_main/aiot_callback.c
+	$(CC_PREFIX)$(CC) $(C_FLAGS) -c -o "$@" "$<"
+
 OBJS += build/objs/doa_app_handle.o
 -include build/objs/doa_app_handle.d
 build/objs/doa_app_handle.o : $(SDK_PATH)/projects/offline_asr_alg_pro_sample/app/app_doa/doa_app_handle.c

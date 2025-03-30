@@ -298,7 +298,7 @@ void network_recv_data_task(void *parameter)
  * @param msg_len 数据长度
  * @return int32_t RETURN_OK 处理成功，RETURN_ERR 数据异常
  */
- extern int32_t aiot_callback(uint8_t *msg_buf);
+// extern int32_t aiot_callback(uint8_t *msg_buf);
 int32_t wifi_msg_deal(uint8_t *msg_buf, int32_t msg_len)
 {
     if ((msg_buf == NULL) || (msg_len <= 0))
