@@ -2,7 +2,7 @@
 
 #include "user_config.h"
 
-#include "cias_common.h"
+#include "aiot_callback.h"
 #include "cias_network_msg_send_task.h"
 #include "cias_network_msg_protocol.h"
 #include "cias_voice_plyer_handle.h"
